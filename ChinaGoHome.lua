@@ -337,11 +337,11 @@ event.register_handler(menu_event.PlayerJoin, function(playerName, pid)
     -- kick if name matches known trouble makers
     if cghSpamBlock:is_enabled() then
         --if string.find(playerName,"xiao-",1) or string.find(playerName,"-WX-GTA") or string.find(playerName,"x-gta") then
-        if string.sub(playerName,1,6) == "rc1030" or string.sub(playerName,1,5) == "xiao-" or string.sub(playerName,1,4) == "TXDW" or string.sub(playerName,5,8) == "-gta" or string.sub(string.lower(playerName),6,12) == "-wx-gta" then
+        if string.sub(playerName,1,6) == "rc1030" or string.sub(playerName,1,5) == "xiao-" or string.sub(playerName,1,4) == "TXDW" or string.sub(string.lower(playerName),5,8) == "-gta" or string.sub(string.lower(playerName),6,12) == "-wx-gta" then
             if NETWORK.NETWORK_IS_HOST() then
                 showDebugMsg('log',"[ChinaGoHome:PlayerJoin]  HOST KICKING  "..playerName.."  pid: "..pid)
                 if cghSpamAnnounce:is_enabled() then
-                    network.send_chat_message("[ChinaGoHome]  Blocked "..playerName.." from joining.")
+                    network.send_chat_message("[ChinaGoHome] Blocked "..playerName.." from joining")
                 end
                 command.call("hostkick", {pid})
             else
