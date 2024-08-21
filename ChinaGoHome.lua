@@ -1,8 +1,12 @@
 local cgh_gui = gui.get_tab("ChinaGoHome")
 
+-- DISCLAIMER
+-- This script is only used to combat the invasion of Chinese in GTAOnline in Western regions,
+-- who are mostly toxic modders, break sessions, etc, from my experience over the years.
+-- Apologies to those who are not.
 
 -- thanks to the contributors at YimMenu Extras Addon LUA Script for some of this as a base
-local addonVersion = "0.0.1"
+local addonVersion = "0.0.2"
 
 
 -- Function to create a text element
@@ -68,25 +72,27 @@ function delete_entity(ent) --discord@rostal315
 end
 
 function fcrash(script, pid)
-    script.run_in_fiber(function (fragcrash)
+    script.run_in_fiber(function(fragcrash)
+        fragcrash:yield()
         if PLAYER.GET_PLAYER_PED(pid) == PLAYER.PLAYER_PED_ID() then --避免目标离开战局后作用于自己
-            showDebugMsg('gui',"The attack has stopped","The target has been detected to have left or the target is himself")
+            showDebugMsg('gui',"The attack has stopped","The target has been detected to have left or the target is you")
             return
         end
         local fraghash = joaat("prop_fragtest_cnst_04")
         STREAMING.REQUEST_MODEL(fraghash)
         local TargetCrds = ENTITY.GET_ENTITY_COORDS(PLAYER.GET_PLAYER_PED(pid), false)
         local crashstaff1 = OBJECT.CREATE_OBJECT(fraghash, TargetCrds.x, TargetCrds.y, TargetCrds.z, true, false, false)
-            OBJECT.BREAK_OBJECT_FRAGMENT_CHILD(crashstaff1, 1, false)
+        OBJECT.BREAK_OBJECT_FRAGMENT_CHILD(crashstaff1, 1, false)
         local crashstaff2 = OBJECT.CREATE_OBJECT(fraghash, TargetCrds.x, TargetCrds.y, TargetCrds.z, true, false, false)
-            OBJECT.BREAK_OBJECT_FRAGMENT_CHILD(crashstaff2, 1, false)
+        OBJECT.BREAK_OBJECT_FRAGMENT_CHILD(crashstaff2, 1, false)
         local crashstaff3 = OBJECT.CREATE_OBJECT(fraghash, TargetCrds.x, TargetCrds.y, TargetCrds.z, true, false, false)
-            OBJECT.BREAK_OBJECT_FRAGMENT_CHILD(crashstaff3, 1, false)
+        OBJECT.BREAK_OBJECT_FRAGMENT_CHILD(crashstaff3, 1, false)
         local crashstaff4 = OBJECT.CREATE_OBJECT(fraghash, TargetCrds.x, TargetCrds.y, TargetCrds.z, true, false, false)
-            OBJECT.BREAK_OBJECT_FRAGMENT_CHILD(crashstaff4, 1, false)
+        OBJECT.BREAK_OBJECT_FRAGMENT_CHILD(crashstaff4, 1, false)
         for i = 0, 100 do
+            fragcrash:yield()
             if PLAYER.GET_PLAYER_PED(pid) == PLAYER.PLAYER_PED_ID() then --避免目标离开战局后作用于自己
-                showDebugMsg('gui',"The attack has stopped","The target has been detected to have left or the target is himself")
+                showDebugMsg('gui',"The attack has stopped","The target has been detected to have left or the target is you")
                 return
             end
             local TargetPlayerPos = ENTITY.GET_ENTITY_COORDS(PLAYER.GET_PLAYER_PED(pid), false)
@@ -101,13 +107,15 @@ function fcrash(script, pid)
             delete_entity(crashstaff4)
         end
     end)
-    script.run_in_fiber(function (fragcrash2)
+    script.run_in_fiber(function(fragcrash2)
+        fragcrash2:yield()
         local TargetCrds = ENTITY.GET_ENTITY_COORDS(PLAYER.GET_PLAYER_PED(pid), false)
         local fraghash = joaat("prop_fragtest_cnst_04")
         STREAMING.REQUEST_MODEL(fraghash)
         for i=1,10 do
+            fragcrash2:yield()
             if PLAYER.GET_PLAYER_PED(pid) == PLAYER.PLAYER_PED_ID() then --避免目标离开战局后作用于自己
-                showDebugMsg('gui',"The attack has stopped","The target has been detected to have left or the target is himself")
+                showDebugMsg('gui',"The attack has stopped","The target has been detected to have left or the target is you")
                 return
             end
             local object = OBJECT.CREATE_OBJECT(fraghash, TargetCrds.x, TargetCrds.y, TargetCrds.z, true, false, false)
@@ -142,7 +150,7 @@ function fcrash(script, pid)
             fragcrash2:sleep(100)
             delete_entity(object)
         end
-        sleep(2)
+        sleep(100)
     end)
 end
 
@@ -159,16 +167,25 @@ local cghAnnounce = cgh_gui:add_checkbox("Announce")
 toolTip(cgh_gui, "Announce kicks to the session")
 cgh_gui:add_sameline()
 local cghLoop = cgh_gui:add_checkbox("Loop")
-toolTip(cgh_gui, "Loop detection")
+toolTip(cgh_gui, "Loop detection. May cause lag spikes. [WIP]")
 cgh_gui:add_separator()
 local cghFlag = cgh_gui:add_checkbox("Flag")
-toolTip(cgh_gui, "Flag all chinese the session as a modder")
+toolTip(cgh_gui, "Flag all chinese the session as a modder May cause lag spikes. [WIP]")
 cgh_gui:add_sameline()
 local cghKick = cgh_gui:add_checkbox("Kick")
-toolTip(cgh_gui, "Kick when detected")
+toolTip(cgh_gui, "Kick when detected, requires Host. [WIP]")
 cgh_gui:add_sameline()
 local cghCrash = cgh_gui:add_checkbox("Crash")
-toolTip(cgh_gui, "Crash when detected")
+toolTip(cgh_gui, "Crash when detected. Disabled when Looped. May lag/crash you if there are a lot of targets. [WIP]")
+
+cgh_gui:add_separator()
+local cghSpamBlock = cgh_gui:add_checkbox("Block Bots")
+toolTip(cgh_gui, "Block most known spam/crash bots, may hit a few innocents. [WIP]")
+cghSpamBlock:set_enabled(true)
+cgh_gui:add_sameline()
+local cghSpamAnnounce = cgh_gui:add_checkbox("Announce Bots")
+toolTip(cgh_gui, "Announce blocked bots to the session")
+
 
 cgh_gui:add_separator()
 local cghDebug = cgh_gui:add_checkbox("Debug")
@@ -177,7 +194,7 @@ cghDebug:set_enabled(true)
 cgh_gui:add_sameline()
 local cghDebugChat = cgh_gui:add_checkbox("Chat")
 toolTip(cgh_gui, "Show chat messages in the console")
-cghDebugChat:set_enabled(true)
+cghDebugChat:set_enabled(false)
 
 
 local cghDetected = {}
@@ -244,11 +261,15 @@ function cghCheck()
                         table.insert(cghDetected, {pid,targetPlayerName})
                     end
                     if cghEnabled:is_enabled() and cghFlag:is_enabled() then 
-                        if not detect or detect and not string.find(reason,"ChinaGoHome",1) then
+                        if not detect or (detect and not string.find(reason,"ChinaGoHome",1)) then
                             network.flag_player_as_modder(pid, infraction.CUSTOM_REASON, "[ChinaGoHome]  "..lang)
                             reason = network.get_flagged_modder_reason(pid)
                             log.warning("[CGH:cghCheck]  FLAGGING:  ["..targetPlayerName.."]  pid: "..pid..",  langid: "..langid..",  lang: "..lang.."  reason: "..reason)
                         end
+                    end
+                    if cghEnabled:is_enabled() and cghCrash:is_enabled() and not cghLoop:is_enabled() then
+                        log.warning("[CGH:cghCheck]  CRASHING:  ["..targetPlayerName.."]  pid: "..pid..",  langid: "..langid..",  lang: "..lang.."  reason: "..reason)
+                        fcrash(script, pid)
                     end
                     if cghEnabled:is_enabled() and cghKick:is_enabled() then 
                         reason = "[ChinaGoHome]  "..lang
@@ -274,10 +295,6 @@ function cghCheck()
                         end
                         table.insert(cghKicked, {pid,targetPlayerName,targetPlayerMoney,targetPlayerRP})
                     end
-                    if cghEnabled:is_enabled() and cghCrash:is_enabled() then 
-                        log.warning("[CGH:cghCheck]  CRASHING:  ["..targetPlayerName.."]  pid: "..pid..",  langid: "..langid..",  lang: "..lang.."  reason: "..reason)
-                        fcrash(script, pid)
-                    end
                 end
             end
         end
@@ -285,7 +302,7 @@ function cghCheck()
 end
 
 
-cgh_gui:add_button("Check now!", function ()
+cgh_gui:add_button("Check now!", function()
     if cghEnabled:is_enabled() then 
         showDebugMsg('log',"[CGH]  Checking!")
         showDebugMsg('gui',"CGH", "Checking!")
@@ -294,7 +311,7 @@ cgh_gui:add_button("Check now!", function ()
 end)
 
 cgh_gui:add_sameline()
-cgh_gui:add_button("Print Array", function ()
+cgh_gui:add_button("Print Array", function()
     showDebugMsg('log',"[ChinaGoHome:PrintArray]  #cghDetected: "..#cghDetected.."\t#cghKicked: "..#cghKicked)
     for k, v in pairs(cghDetected) do
         --showDebugMsg('log',"[ChinaGoHome:PrintArray]  [cghDetected]  k="..tostring(k).."\tv="..tostring(v))
@@ -315,23 +332,28 @@ script.register_looped("cghEnabled", function(script)
     end
 end) 
 
-event.register_handler(menu_event.PlayerJoin, function (playerName, pid)
+event.register_handler(menu_event.PlayerJoin, function(playerName, pid)
     showDebugMsg('log',"[ChinaGoHome:PlayerJoin]  pid: "..pid.."  name: "..playerName.."  money: "..network.get_player_wallet(pid)+network.get_player_bank(pid).."  rp: "..network.get_player_rp(pid).."  lang: "..network.get_player_language_name(pid))
     -- kick if name matches known trouble makers
-    --if string.find(playerName,"xiao-",1) or string.find(playerName,"-WX-GTA") or string.find(playerName,"x-gta") then
-    if string.sub(playerName,1,6) == "rc1030" or string.sub(playerName,1,5) == "xiao-" or string.sub(playerName,1,4) == "TXDW" or string.sub(string.lower(playerName),6,12) == "-wx-gta" then
-        if NETWORK.NETWORK_IS_HOST() then
-            showDebugMsg('log',"[ChinaGoHome:PlayerJoin]  HOST KICKING  "..playerName.."  pid: "..pid)
-            command.call("hostkick", {pid})
-        else
-            -- TODO
-            showDebugMsg('log',"[ChinaGoHome:PlayerJoin]  SMART KICKING  "..playerName.."  pid: "..pid)
-            --command.call("smartkick", {pid})
+    if cghSpamBlock:is_enabled() then
+        --if string.find(playerName,"xiao-",1) or string.find(playerName,"-WX-GTA") or string.find(playerName,"x-gta") then
+        if string.sub(playerName,1,6) == "rc1030" or string.sub(playerName,1,5) == "xiao-" or string.sub(playerName,1,4) == "TXDW" or string.sub(playerName,5,8) == "-gta" or string.sub(string.lower(playerName),6,12) == "-wx-gta" then
+            if NETWORK.NETWORK_IS_HOST() then
+                showDebugMsg('log',"[ChinaGoHome:PlayerJoin]  HOST KICKING  "..playerName.."  pid: "..pid)
+                if cghSpamAnnounce:is_enabled() then
+                    network.send_chat_message("[ChinaGoHome]  Blocked "..playerName.." from joining.")
+                end
+                command.call("hostkick", {pid})
+            else
+                -- TODO
+                --showDebugMsg('log',"[ChinaGoHome:PlayerJoin]  SMART KICKING  "..playerName.."  pid: "..pid)
+                --command.call("smartkick", {pid})
+            end
         end
     end
 end)
 
-event.register_handler(menu_event.PlayerLeave, function (playerName)
+event.register_handler(menu_event.PlayerLeave, function(playerName)
     --showDebugMsg('log',"Player "..playerName.." left")
     for k,v in pairs(cghDetected) do
         if v[2] == playerName then
@@ -340,7 +362,7 @@ event.register_handler(menu_event.PlayerLeave, function (playerName)
     end
 end)
 
-event.register_handler(menu_event.ChatMessageReceived, function (pid, msg)
+event.register_handler(menu_event.ChatMessageReceived, function(pid, msg)
     --log.info(player_id)
     --log.info(chat_message)
     if showDebugMessages and cghDebugChat:is_enabled() then
@@ -348,18 +370,18 @@ event.register_handler(menu_event.ChatMessageReceived, function (pid, msg)
     end
 end)
 
-event.register_handler(menu_event.PlayerMgrInit, function ()
+event.register_handler(menu_event.PlayerMgrInit, function()
     showDebugMsg('log',"Player manager inited, we just joined a session.")
-    -- TODO recreate the array(s)
+    cghLoop:set_enabled(false)
     cghDetected = 'nil'
     cghDetected = {}
     cghKicked = 'nil'
     cghKicked = {}
 end)
 
-event.register_handler(menu_event.PlayerMgrShutdown, function ()
+event.register_handler(menu_event.PlayerMgrShutdown, function()
     showDebugMsg('log',"Player manager inited, we just left a session.")
-    -- TODO empty the array(s)
+    cghLoop:set_enabled(false)
     cghDetected = 'nil'
     cghDetected = {}
     cghKicked = 'nil'
