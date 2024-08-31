@@ -194,7 +194,7 @@ cghDebug:set_enabled(true)
 cgh_gui:add_sameline()
 local cghDebugChat = cgh_gui:add_checkbox("Chat")
 toolTip(cgh_gui, "Show chat messages in the console")
-cghDebugChat:set_enabled(false)
+cghDebugChat:set_enabled(true)
 
 
 local cghDetected = {}
@@ -224,81 +224,85 @@ end
 
 
 function cghCheck()
-    local localPlayerID = PLAYER.PLAYER_ID()
-    local isHost = NETWORK.NETWORK_IS_HOST()
-    
-    -- Identify offenders and store their IDs
-    for i = 0, 31 do
-        local pid = i
-        ent = PLAYER.GET_PLAYER_PED(pid)
-        if ENTITY.DOES_ENTITY_EXIST(ent) and not ENTITY.IS_ENTITY_DEAD(ent, false) then
-            local langid = network.get_player_language_id(pid)
-            local lang = network.get_player_language_name(pid)
-            local detect = network.is_player_flagged_as_modder(pid)
-            local reason = network.get_flagged_modder_reason(pid)
-            local targetPlayerName = PLAYER.GET_PLAYER_NAME(pid)
-            local targetPlayerWallet = network.get_player_wallet(pid)
-            local targetPlayerBank = network.get_player_bank(pid)
-            local targetPlayerRank = network.get_player_rank(pid)
-            local targetPlayerRP = network.get_player_rp(pid)
-            local targetPlayerMoney = targetPlayerWallet+targetPlayerBank
-            
-            --showDebugMsg('log',"[CGH]  targetPlayerName: "..targetPlayerName.."  pid: "..pid..",  langid: "..langid..",  lang: "..lang)
-            --showDebugMsg('gui',"ChinaGoHome", "targetPlayerName: "..targetPlayerName.."  PID: "..pid..",  langid: "..langid..",  lang: "..lang)
+    script.run_in_fiber(function(cghCheckNow)
+        local localPlayerID = PLAYER.PLAYER_ID()
+        local isHost = NETWORK.NETWORK_IS_HOST()
+        
+        -- Identify offenders and store their IDs
+        for i = 0, 31 do
+            -- sleep until next game frame
+            cghCheckNow:yield()
+            local pid = i
+            ent = PLAYER.GET_PLAYER_PED(pid)
+            if ENTITY.DOES_ENTITY_EXIST(ent) and not ENTITY.IS_ENTITY_DEAD(ent, false) then
+                local langid = network.get_player_language_id(pid)
+                local lang = network.get_player_language_name(pid)
+                local detect = network.is_player_flagged_as_modder(pid)
+                local reason = network.get_flagged_modder_reason(pid)
+                local targetPlayerName = PLAYER.GET_PLAYER_NAME(pid)
+                local targetPlayerWallet = network.get_player_wallet(pid)
+                local targetPlayerBank = network.get_player_bank(pid)
+                local targetPlayerRank = network.get_player_rank(pid)
+                local targetPlayerRP = network.get_player_rp(pid)
+                local targetPlayerMoney = targetPlayerWallet+targetPlayerBank
+                
+                --showDebugMsg('log',"[CGH]  targetPlayerName: "..targetPlayerName.."  pid: "..pid..",  langid: "..langid..",  lang: "..lang)
+                --showDebugMsg('gui',"ChinaGoHome", "targetPlayerName: "..targetPlayerName.."  PID: "..pid..",  langid: "..langid..",  lang: "..lang)
 
-            if (string.find(lang,"Chinese",1) and targetPlayerMoney > 0) then
-                -- avoid false positives
-                local kickedPlayerIndex = getPlayerIndex(cghKicked, pid)
-                if kickedPlayerIndex and (pid == cghKicked[kickedPlayerIndex][1] and targetPlayerMoney == cghKicked[kickedPlayerIndex][3] and targetPlayerRP == cghKicked[kickedPlayerIndex][4]) then
-                    -- false positive found, TODO move this part to separate function and return?
-                    --showDebugMsg('log',"[CGH:cghCheck]  lastKicked  MATCH!!  PID: "..cghKicked[kickedPlayerIndex][1].."  name: "..cghKicked[kickedPlayerIndex][2].."  money: "..cghKicked[kickedPlayerIndex][3].."  rp: "..cghKicked[kickedPlayerIndex][4])
-                    --showDebugMsg('log',"[CGH:cghCheck]  lastKicked  MATCH!!  PID: "..pid.."  name: "..targetPlayerName.."  money: "..targetPlayerMoney.."  rp="..targetPlayerRP.."  Language: "..lang)
-                else
-                    showDebugMsg('log',"[CGH:cghCheck]  CHINA DETECTED:  ["..targetPlayerName.."]  pid: "..pid..",  langid: "..langid..",  lang: "..lang.."  wallet="..targetPlayerWallet.."  bank="..targetPlayerBank.."  targetPlayerMoney: "..targetPlayerMoney.."  rank="..targetPlayerRank.."  rp="..targetPlayerRP)
-                    showDebugMsg('gui',"ChinaGoHome:cghCheck", "CHINA DETECTED:  ["..targetPlayerName.."]  PID:"..pid.. "  lang: "..lang.."  wallet="..targetPlayerWallet.."  bank="..targetPlayerBank.."  targetPlayerMoney: "..targetPlayerMoney.."  rank="..targetPlayerRank.."  rp="..targetPlayerRP)
-                    -- add to the array if not already there
-                    if not getPlayerIndex(cghDetected, pid) then
-                        table.insert(cghDetected, {pid,targetPlayerName})
-                    end
-                    if cghEnabled:is_enabled() and cghFlag:is_enabled() then 
-                        if not detect or (detect and not string.find(reason,"ChinaGoHome",1)) then
-                            network.flag_player_as_modder(pid, infraction.CUSTOM_REASON, "[ChinaGoHome]  "..lang)
-                            reason = network.get_flagged_modder_reason(pid)
-                            log.warning("[CGH:cghCheck]  FLAGGING:  ["..targetPlayerName.."]  pid: "..pid..",  langid: "..langid..",  lang: "..lang.."  reason: "..reason)
+                if (string.find(lang,"Chinese",1) and targetPlayerMoney > 0) then
+                    -- avoid false positives
+                    local kickedPlayerIndex = getPlayerIndex(cghKicked, pid)
+                    if kickedPlayerIndex and (pid == cghKicked[kickedPlayerIndex][1] and targetPlayerMoney == cghKicked[kickedPlayerIndex][3] and targetPlayerRP == cghKicked[kickedPlayerIndex][4]) then
+                        -- false positive found, TODO move this part to separate function and return?
+                        --showDebugMsg('log',"[CGH:cghCheck]  lastKicked  MATCH!!  PID: "..cghKicked[kickedPlayerIndex][1].."  name: "..cghKicked[kickedPlayerIndex][2].."  money: "..cghKicked[kickedPlayerIndex][3].."  rp: "..cghKicked[kickedPlayerIndex][4])
+                        --showDebugMsg('log',"[CGH:cghCheck]  lastKicked  MATCH!!  PID: "..pid.."  name: "..targetPlayerName.."  money: "..targetPlayerMoney.."  rp="..targetPlayerRP.."  Language: "..lang)
+                    else
+                        showDebugMsg('log',"[CGH:cghCheck]  CHINA DETECTED:  ["..targetPlayerName.."]  pid: "..pid..",  langid: "..langid..",  lang: "..lang.."  wallet="..targetPlayerWallet.."  bank="..targetPlayerBank.."  targetPlayerMoney: "..targetPlayerMoney.."  rank="..targetPlayerRank.."  rp="..targetPlayerRP)
+                        showDebugMsg('gui',"ChinaGoHome:cghCheck", "CHINA DETECTED:  ["..targetPlayerName.."]  PID:"..pid.. "  lang: "..lang.."  wallet="..targetPlayerWallet.."  bank="..targetPlayerBank.."  targetPlayerMoney: "..targetPlayerMoney.."  rank="..targetPlayerRank.."  rp="..targetPlayerRP)
+                        -- add to the array if not already there
+                        if not getPlayerIndex(cghDetected, pid) then
+                            table.insert(cghDetected, {pid,targetPlayerName})
                         end
-                    end
-                    if cghEnabled:is_enabled() and cghCrash:is_enabled() and not cghLoop:is_enabled() then
-                        log.warning("[CGH:cghCheck]  CRASHING:  ["..targetPlayerName.."]  pid: "..pid..",  langid: "..langid..",  lang: "..lang.."  reason: "..reason)
-                        fcrash(script, pid)
-                    end
-                    if cghEnabled:is_enabled() and cghKick:is_enabled() then 
-                        reason = "[ChinaGoHome]  "..lang
-                        log.warning("[CGH:cghCheck]  KICKING:  ["..targetPlayerName.."]  pid: "..pid..",  langid: "..langid..",  lang: "..lang.."  reason: "..reason)
-                        gui.show_warning("ChinaGoHome:cghCheck", "Kicking!  ["..targetPlayerName.."]  PID: "..pid..",  langid: "..langid..",  lang: "..lang)
-                        if isHost then
-                            command.call("hostkick", {pid})
-                        else
-                            command.call("smartkick", {pid})
-                        end
-                        if cghAnnounce:is_enabled() then
-                            network.send_chat_message("Auto-Kicked ["..targetPlayerName.."] Reason: "..reason, false)
-                        end
-                        -- cleanup array, move to PlayerLeft?
-                        for k,v in pairs(cghDetected) do
-                            if v[2] == targetPlayerName then
-                                table.remove(cghDetected,k)
+                        if cghEnabled:is_enabled() and cghFlag:is_enabled() then 
+                            if not detect or (detect and not string.find(reason,"ChinaGoHome",1)) then
+                                network.flag_player_as_modder(pid, infraction.CUSTOM_REASON, "[ChinaGoHome]  "..lang)
+                                reason = network.get_flagged_modder_reason(pid)
+                                log.warning("[CGH:cghCheck]  FLAGGING:  ["..targetPlayerName.."]  pid: "..pid..",  langid: "..langid..",  lang: "..lang.."  reason: "..reason)
                             end
                         end
-                        -- TEST prevent duplicate PIDs in cghKicked
-                        if kickedPlayerIndex then
-                            table.remove(cghKicked,kickedPlayerIndex)
+                        if cghEnabled:is_enabled() and cghCrash:is_enabled() and not cghLoop:is_enabled() then
+                            log.warning("[CGH:cghCheck]  CRASHING:  ["..targetPlayerName.."]  pid: "..pid..",  langid: "..langid..",  lang: "..lang.."  reason: "..reason)
+                            fcrash(script, pid)
                         end
-                        table.insert(cghKicked, {pid,targetPlayerName,targetPlayerMoney,targetPlayerRP})
+                        if cghEnabled:is_enabled() and cghKick:is_enabled() then 
+                            reason = "[ChinaGoHome]  "..lang
+                            log.warning("[CGH:cghCheck]  KICKING:  ["..targetPlayerName.."]  pid: "..pid..",  langid: "..langid..",  lang: "..lang.."  reason: "..reason)
+                            gui.show_warning("ChinaGoHome:cghCheck", "Kicking!  ["..targetPlayerName.."]  PID: "..pid..",  langid: "..langid..",  lang: "..lang)
+                            if isHost then
+                                command.call("hostkick", {pid})
+                            else
+                                command.call("smartkick", {pid})
+                            end
+                            if cghAnnounce:is_enabled() then
+                                network.send_chat_message("Auto-Kicked ["..targetPlayerName.."] Reason: "..reason, false)
+                            end
+                            -- cleanup array, move to PlayerLeft?
+                            for k,v in pairs(cghDetected) do
+                                if v[2] == targetPlayerName then
+                                    table.remove(cghDetected,k)
+                                end
+                            end
+                            -- TEST prevent duplicate PIDs in cghKicked
+                            if kickedPlayerIndex then
+                                table.remove(cghKicked,kickedPlayerIndex)
+                            end
+                            table.insert(cghKicked, {pid,targetPlayerName,targetPlayerMoney,targetPlayerRP})
+                        end
                     end
                 end
             end
         end
-    end
+    end)
 end
 
 
@@ -354,6 +358,7 @@ event.register_handler(menu_event.PlayerJoin, function(playerName, pid)
 end)
 
 event.register_handler(menu_event.PlayerLeave, function(playerName)
+    showDebugMsg('log',"[ChinaGoHome:PlayerLeave]  name: "..playerName)
     --showDebugMsg('log',"Player "..playerName.." left")
     for k,v in pairs(cghDetected) do
         if v[2] == playerName then
