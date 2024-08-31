@@ -6,7 +6,7 @@ local cgh_gui = gui.get_tab("ChinaGoHome")
 -- Apologies to those who are not.
 
 -- thanks to the contributors at YimMenu Extras Addon LUA Script for some of this as a base
-local addonVersion = "0.0.2"
+local addonVersion = "0.0.3"
 
 
 -- Function to create a text element
@@ -168,6 +168,7 @@ toolTip(cgh_gui, "Announce kicks to the session")
 cgh_gui:add_sameline()
 local cghLoop = cgh_gui:add_checkbox("Loop")
 toolTip(cgh_gui, "Loop detection. May cause lag spikes. [WIP]")
+
 cgh_gui:add_separator()
 local cghFlag = cgh_gui:add_checkbox("Flag")
 toolTip(cgh_gui, "Flag all chinese the session as a modder May cause lag spikes. [WIP]")
@@ -195,6 +196,11 @@ cgh_gui:add_sameline()
 local cghDebugChat = cgh_gui:add_checkbox("Chat")
 toolTip(cgh_gui, "Show chat messages in the console")
 cghDebugChat:set_enabled(true)
+
+cgh_gui:add_separator()
+local checkNumMax = cgh_gui:add_input_int("At a time")
+toolTip(cgh_gui, "Maximum number of players to process at a time, to prevent lag/crashes")
+checkNumMax:set_value(10)
 
 
 local cghDetected = {}
@@ -227,9 +233,11 @@ function cghCheck()
     script.run_in_fiber(function(cghCheckNow)
         local localPlayerID = PLAYER.PLAYER_ID()
         local isHost = NETWORK.NETWORK_IS_HOST()
+        local numChecked = 0
         
         -- Identify offenders and store their IDs
         for i = 0, 31 do
+            if numChecked > checkNumMax:get_value() then return end
             -- sleep until next game frame
             cghCheckNow:yield()
             local pid = i
@@ -299,6 +307,7 @@ function cghCheck()
                             table.insert(cghKicked, {pid,targetPlayerName,targetPlayerMoney,targetPlayerRP})
                         end
                     end
+                    numChecked = numChecked+1
                 end
             end
         end
